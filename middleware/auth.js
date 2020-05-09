@@ -52,12 +52,41 @@ class Auth {
         }
     }
 
+    get ws() {
+        return async (ctx,next)=>{
+            ctx.state.user = parseUser(ctx.cookies.get('name') || '')
+            await next()
+        }
+    }
+
     static verifyToken(token) {
         try {
             jwt.verify(token,global.config.security.secretKey)
             return true
         } catch (error) {
             return false
+        }
+    }
+    static parseUser(obj) {
+        if (!obj) {
+            return;
+        }
+        console.log('try parse: ' + obj);
+        let s = '';
+        if (typeof obj === 'string') {
+            s = obj;
+        } else if (obj.headers) {
+            let cookies = new Cookies(obj, null);
+            s = cookies.get('name');
+        }
+        if (s) {
+            try {
+                let user = JSON.parse(Buffer.from(s, 'base64').toString());
+                console.log(`User: ${user.name}, ID: ${user.id}`);
+                return user;
+            } catch (e) {
+                // ignore
+            }
         }
     }
 }
